@@ -16,6 +16,25 @@ import (
 	"go.ytsaurus.tech/yt/go/yterrors"
 )
 
+type TestAppServiceProvider struct {
+	logger          *slog.Logger
+	YtClientFactory YtClientFactory
+}
+
+func (tsp TestAppServiceProvider) GetYtClientFactory() YtClientFactory {
+	return tsp.YtClientFactory
+}
+
+func NewTestAppServiceProvider(logger *slog.Logger, ytSettings YtClientSettings) *TestAppServiceProvider {
+	return &TestAppServiceProvider{
+		logger: logger,
+		YtClientFactory: YtClientFactory{
+			logger:   logger,
+			settings: ytSettings,
+		},
+	}
+}
+
 func TestAuthMiddleware(t *testing.T) {
 	ctx := context.Background()
 	container, err := yttc.RunContainer(ctx, yttc.WithAuth())
@@ -23,21 +42,22 @@ func TestAuthMiddleware(t *testing.T) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	var handlerFunc = func(ggreq *ggh.GGRequest[struct{}, struct{}, struct{}]) (*ggh.GGResponse[struct{}, YtLikeErrorData], error) {
-		return &ggh.GGResponse[struct{}, YtLikeErrorData]{}, nil
-	}
-
 	ytProxy, err := container.GetProxy(ctx)
 	require.NoError(t, err)
 	ytSettings := YtClientSettings{YtProxy: ytProxy}
+	sp := NewTestAppServiceProvider(logger, ytSettings)
 
-	handler := ggh.Uitzicht[struct{}, struct{}, struct{}, struct{}, YtLikeErrorData]{
-		ServiceProvider: new(struct{}),
+	var handlerFunc = func(ggreq *ggh.GGRequest[TestAppServiceProvider, struct{}, struct{}]) (*ggh.GGResponse[struct{}, YtLikeErrorData], error) {
+		return &ggh.GGResponse[struct{}, YtLikeErrorData]{}, nil
+	}
+
+	handler := ggh.Uitzicht[TestAppServiceProvider, struct{}, struct{}, struct{}, YtLikeErrorData]{
+		ServiceProvider: sp,
 		HandlerFunc:     handlerFunc,
-		Middlewares: []func(hFunc func(*ggh.GGRequest[struct{}, struct{}, struct{}]) (*ggh.GGResponse[struct{}, YtLikeErrorData], error)) func(*ggh.GGRequest[struct{}, struct{}, struct{}]) (*ggh.GGResponse[struct{}, YtLikeErrorData], error){
-			GetAuthMiddleware[struct{}, struct{}, struct{}, struct{}, YtLikeErrorData](ytSettings),
-			ggh.GetErrorHandlingMiddleware[struct{}, struct{}, struct{}, struct{}, YtLikeErrorData](HandleGGHYTErrors),
-			ggh.GetDataProcessingMiddleware[struct{}, struct{}, struct{}, struct{}, YtLikeErrorData](nil),
+		Middlewares: []func(hFunc func(*ggh.GGRequest[TestAppServiceProvider, struct{}, struct{}]) (*ggh.GGResponse[struct{}, YtLikeErrorData], error)) func(*ggh.GGRequest[TestAppServiceProvider, struct{}, struct{}]) (*ggh.GGResponse[struct{}, YtLikeErrorData], error){
+			GetAuthMiddleware[TestAppServiceProvider, struct{}, struct{}, struct{}, YtLikeErrorData](),
+			ggh.GetErrorHandlingMiddleware[TestAppServiceProvider, struct{}, struct{}, struct{}, YtLikeErrorData](HandleGGHYTErrors),
+			ggh.GetDataProcessingMiddleware[TestAppServiceProvider, struct{}, struct{}, struct{}, YtLikeErrorData](nil),
 		},
 		Logger: logger,
 	}
