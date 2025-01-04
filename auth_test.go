@@ -16,25 +16,6 @@ import (
 	"go.ytsaurus.tech/yt/go/yterrors"
 )
 
-type TestAppServiceProvider struct {
-	logger          *slog.Logger
-	YtClientFactory YtClientFactory
-}
-
-func (tsp TestAppServiceProvider) GetYtClientFactory() YtClientFactory {
-	return tsp.YtClientFactory
-}
-
-func NewTestAppServiceProvider(logger *slog.Logger, ytSettings YtClientSettings) *TestAppServiceProvider {
-	return &TestAppServiceProvider{
-		logger: logger,
-		YtClientFactory: YtClientFactory{
-			logger:   logger,
-			settings: ytSettings,
-		},
-	}
-}
-
 func TestAuthMiddleware(t *testing.T) {
 	ctx := context.Background()
 	container, err := yttc.RunContainer(ctx, yttc.WithAuth())
