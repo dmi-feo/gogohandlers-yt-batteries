@@ -32,7 +32,7 @@ func TestAuthMiddleware(t *testing.T) {
 		return &ggh.GGResponse[struct{}, YtLikeErrorData]{}, nil
 	}
 
-	handler := ggh.Uitzicht[TestAppServiceProvider, struct{}, struct{}, struct{}, YtLikeErrorData]{
+	handler := ggh.GGHandler[TestAppServiceProvider, struct{}, struct{}, struct{}, YtLikeErrorData]{
 		ServiceProvider: sp,
 		HandlerFunc:     handlerFunc,
 		Middlewares: []func(hFunc func(*ggh.GGRequest[TestAppServiceProvider, struct{}, struct{}]) (*ggh.GGResponse[struct{}, YtLikeErrorData], error)) func(*ggh.GGRequest[TestAppServiceProvider, struct{}, struct{}]) (*ggh.GGResponse[struct{}, YtLikeErrorData], error){
