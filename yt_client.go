@@ -27,6 +27,16 @@ type YtClientFactory struct {
 	settings YtClientSettings
 }
 
+func NewYtClientFactory(cluster string, token string, logger *slog.Logger) YtClientFactory {
+	return YtClientFactory{
+		logger: logger,
+		settings: YtClientSettings{
+			YtProxy: cluster,
+			Token:   token,
+		},
+	}
+}
+
 func (ytcf *YtClientFactory) FromRequest(req *http.Request) (yt.Client, error) {
 	var ytClientConfig yt.Config
 
